@@ -49,7 +49,11 @@ def build(path):
                           "questions": part})
 
     out = {"id": sec['id'], "title": sec['title'], "pages": sec['pages'],
-           "mixed": {"size": per}, "exams": exams}
+           "exams": exams}
+    # Comprehensive exams draw from the whole section, so they are only
+    # generated once every page of that section has been read in.
+    if sec.get('complete'):
+        out['mixed'] = {"size": per}
     js = (u"/* مولّد آليًّا من questions/%s — لا يُحرّر باليد. */\n"
           u"window.EXAM_DATA.sections.push(\n%s\n);\n"
           % (os.path.basename(path), json.dumps(out, ensure_ascii=False, indent=1)))
