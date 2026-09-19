@@ -3,7 +3,7 @@ window.EXAM_DATA.sections.push(
 {
  "id": "creed",
  "title": "قِسْمُ الْعَقِيدَةِ",
- "pages": "٢١–١٢٨ تَقْرِيبًا",
+ "pages": "٢١–١٢٦",
  "exams": [
   {
    "id": "creed-020-040-p1",
@@ -1305,8 +1305,8 @@ window.EXAM_DATA.sections.push(
   {
    "id": "creed-120-140-p1",
    "kind": "range",
-   "title": "الْعَقِيدَةُ — صَفَحَاتُ ١٢٠–١٤٠",
-   "pages": "١٢٠–١٤٠",
+   "title": "الْعَقِيدَةُ — صَفَحَاتُ ١٢٠–١٢٦",
+   "pages": "١٢٠–١٢٦",
    "questions": [
     {
      "id": "c-p120-m1",
@@ -1398,6 +1398,9 @@ window.EXAM_DATA.sections.push(
     }
    ]
   }
- ]
+ ],
+ "mixed": {
+  "size": 15
+ }
 }
 );

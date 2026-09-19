@@ -34,10 +34,13 @@ def build(path):
         lo = (q.get('page', 0) // size) * size
         buckets.setdefault(lo, []).append(q)
 
+    last_page = max(q.get('page', 0) for q in qs)
     exams = []
     for lo in sorted(buckets):
         group = buckets[lo]
-        span = u"%s–%s" % (ar(lo), ar(lo + size))
+        # Don't advertise a window past where the section actually ends.
+        hi = min(lo + size, last_page) if sec.get('complete') else lo + size
+        span = u"%s–%s" % (ar(lo), ar(hi))
         parts = [group[i:i + per] for i in range(0, len(group), per)]
         for i, part in enumerate(parts):
             title = u"الْعَقِيدَةُ" if sec['id'] == 'creed' else sec['title']
