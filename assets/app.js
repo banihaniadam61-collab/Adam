@@ -102,11 +102,14 @@
 
   /* ---------- question rendering ---------- */
   function qHTML(q, i, examId, reveal) {
-    var gk = 'g:' + examId + ':' + q.id;
+    var gk = 'g:' + q.id;
     var g = get(gk, '');
     var typeBadge = q.type === 'word'
       ? '<span class="badge t-word">معنى كلمة</span>'
       : '<span class="badge t-matn">قول المؤلّف</span>';
+    if (q.src === 'hashiya') {
+      typeBadge += '<span class="badge t-src">مِنَ الحَاشِيَةِ</span>';
+    }
 
     var body = '';
     if (q.type === 'word') {
@@ -166,7 +169,7 @@
 
     // restore grade states
     qs.forEach(function (q) {
-      var g = get('g:' + e.id + ':' + q.id, '');
+      var g = get('g:' + q.id, '');
       if (!g) return;
       var card = $('#q-' + CSS.escape(q.id));
       if (!card) return;
@@ -179,7 +182,7 @@
     $('#hideAll').addEventListener('click', function () { toggleAll(false); });
     $('#printBtn').addEventListener('click', function () { toggleAll(true); window.print(); });
     $('#resetBtn').addEventListener('click', function () {
-      qs.forEach(function (q) { set('g:' + e.id + ':' + q.id, ''); });
+      qs.forEach(function (q) { set('g:' + q.id, ''); });
       renderExam(sid, eid);
     });
 
@@ -213,7 +216,7 @@
     var gb = ev.target.closest ? ev.target.closest('.grade .btn') : null;
     if (gb && view._exam) {
       var qid = card.getAttribute('data-qid');
-      var key = 'g:' + view._exam.id + ':' + qid;
+      var key = 'g:' + qid;
       var want = gb.getAttribute('data-g');
       var cur = get(key, '');
       var next = cur === want ? '' : want;
@@ -226,8 +229,8 @@
   }
 
   function updateBar(e, qs) {
-    var done = qs.filter(function (q) { return get('g:' + e.id + ':' + q.id, ''); }).length;
-    var ok = qs.filter(function (q) { return get('g:' + e.id + ':' + q.id, '') === 'ok'; }).length;
+    var done = qs.filter(function (q) { return get('g:' + q.id, ''); }).length;
+    var ok = qs.filter(function (q) { return get('g:' + q.id, '') === 'ok'; }).length;
     var pct = qs.length ? Math.round((done / qs.length) * 100) : 0;
     var bar = $('#bar'), lab = $('#barLabel');
     if (bar) bar.style.width = pct + '%';
@@ -313,9 +316,59 @@
     renderHome();
   }
 
+
+  /* ---------- comprehensive (mixed) exams ---------- */
+  // Seeded, so a question lands in the same mixed exam on every reload.
+  function seedOf(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function buildMixed() {
+    DATA.sections.forEach(function (s) {
+      if (!s.mixed) return;
+      var size = s.mixed.size || 40;
+      var pool = [];
+      (s.exams || []).forEach(function (e) {
+        if (e.kind === 'mixed') return;
+        (e.questions || []).forEach(function (q) { pool.push(q); });
+      });
+      if (!pool.length) return;
+
+      var r = rng(seedOf(s.id));
+      for (var i = pool.length - 1; i > 0; i--) {
+        var j = Math.floor(r() * (i + 1));
+        var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+      }
+      // Every question appears in exactly one mixed exam: full coverage, shuffled.
+      var n = Math.ceil(pool.length / size);
+      for (var k = 0; k < n; k++) {
+        var chunk = pool.slice(k * size, (k + 1) * size);
+        var pp = chunk.map(function (q) { return q.page; }).filter(Boolean);
+        s.exams.push({
+          id: s.id + '-mixed-' + (k + 1),
+          kind: 'mixed',
+          title: 'امْتِحَانٌ شَامِلٌ (' + arNum(k + 1) + ')',
+          pages: pp.length ? 'مِنْ كُلِّ الْقِسْمِ · ص ' + arNum(Math.min.apply(null, pp)) +
+                 '\u2013' + arNum(Math.max.apply(null, pp)) : 'مِنْ كُلِّ الْقِسْمِ',
+          questions: chunk
+        });
+      }
+    });
+  }
+
   $('#bookTitle').textContent = DATA.title || 'بَنْكُ الاِمْتِحَانَاتِ';
   $('#bookSub').textContent = DATA.subtitle || '';
   document.title = DATA.title || document.title;
+  buildMixed();
   renderNav();
   window.addEventListener('hashchange', route);
   route();
