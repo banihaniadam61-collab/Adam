@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بَنْكُ الِامْتِحَانَاتِ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تَخَطِّي إِلَى الْمُحْتَوَى</a>
+
+<header class="topbar">
+  <button id="navToggle" class="icon-btn" aria-label="قَائِمَةُ الْأَقْسَامِ" aria-expanded="false">☰</button>
+  <div class="brand">
+    <span class="brand-title" id="bookTitle">بَنْكُ الِامْتِحَانَاتِ</span>
+    <span class="brand-sub" id="bookSub"></span>
+  </div>
+  <div class="topbar-actions">
+    <button id="themeBtn" class="icon-btn" aria-label="تَبْدِيلُ الْمَظْهَرِ">◑</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav id="sidebar" class="sidebar" aria-label="الْأَقْسَامُ وَالِامْتِحَانَاتُ">
+    <div class="search-wrap">
+      <input id="search" type="search" placeholder="بَحْثٌ فِي الْأَسْئِلَةِ…" aria-label="بَحْثٌ فِي الْأَسْئِلَةِ">
+    </div>
+    <div id="navTree" class="nav-tree"></div>
+  </nav>
+  <div id="scrim" class="scrim" hidden></div>
+
+  <main id="main" class="main">
+    <div id="view"></div>
+  </main>
+</div>
+
+<script src="data/00-manifest.js"></script>
+<script src="data/01-demo.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
