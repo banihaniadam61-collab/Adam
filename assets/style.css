@@ -68,23 +68,47 @@ body{
   background:var(--bg); color:var(--text);
   border:1px solid var(--border); border-radius:10px;
 }
-.nav-sec{margin-bottom:6px}
+.nav-sec{margin-bottom:14px}
 .nav-sec>summary{
-  cursor:pointer; list-style:none; padding:9px 10px; border-radius:9px;
-  font-weight:600; font-size:.95rem;
+  cursor:pointer; list-style:none; padding:10px 12px; border-radius:10px;
+  font-weight:700; font-size:1rem; background:var(--surface-2);
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
 }
 .nav-sec>summary::-webkit-details-marker{display:none}
-.nav-sec>summary:hover{background:var(--surface-2)}
-.nav-sec .count{color:var(--muted);font-weight:400;font-size:.8rem}
+.nav-sec>summary:hover{border-color:var(--accent)}
+.nav-sec .count{color:var(--muted);font-weight:400;font-size:.78rem;white-space:nowrap}
+.nav-note{
+  margin:12px 0 6px; color:var(--muted); font-size:.75rem;
+  letter-spacing:.04em; padding-inline-start:2px;
+}
+
+/* One row per page span: the span on the right, its parts as chips. */
+.span-row{display:flex;align-items:center;gap:8px;margin:5px 0}
+.span-label{
+  font-size:.82rem; color:var(--text); min-width:62px; flex:none;
+  font-variant-numeric:tabular-nums;
+}
+.chips{display:flex;flex-wrap:wrap;gap:5px;flex:1}
+.chips.wide{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr))}
+.chip{
+  display:grid; place-items:center; min-width:38px; height:36px; padding:0 8px;
+  border:1px solid var(--border); border-radius:9px; background:var(--bg);
+  color:var(--text); text-decoration:none; font-size:.9rem; font-weight:600;
+}
+.chip:hover{border-color:var(--accent);background:var(--accent-soft)}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+:root[data-theme="dark"] .chip.active{color:#16181a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip.active{color:#16181a}}
+
+/* Home page keeps the plain links. */
 .nav-exam{
-  display:block; padding:7px 10px 7px 8px; margin:2px 0 2px 0;
-  border-radius:8px; color:var(--text); text-decoration:none; font-size:.9rem;
+  display:block; padding:8px 10px; margin:3px 0; border-radius:8px;
+  color:var(--text); text-decoration:none; font-size:.92rem;
   border-inline-start:3px solid transparent;
 }
 .nav-exam:hover{background:var(--surface-2)}
 .nav-exam.active{background:var(--accent-soft);border-inline-start-color:var(--accent);font-weight:600}
-.nav-exam .pages{display:block;color:var(--muted);font-size:.76rem}
-.nav-group{margin:10px 0 4px;color:var(--muted);font-size:.75rem;letter-spacing:.04em;padding-inline-start:10px}
+.nav-exam .pages{display:block;color:var(--muted);font-size:.78rem}
 
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:25}
 

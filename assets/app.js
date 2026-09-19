@@ -72,30 +72,61 @@
   scrim.addEventListener('click', closeNav);
 
   /* ---------- nav tree ---------- */
+  // Exams are shown as compact numbered chips rather than a long stack of
+  // full-width rows, so a section with a dozen exams stays scannable.
+  function chip(s, e, label) {
+    return '<a class="chip" href="#/s/' + esc(s.id) + '/e/' + esc(e.id) + '"' +
+      ' data-key="' + esc(s.id + '/' + e.id) + '"' +
+      ' title="' + esc(e.title) + ' — ' + arNum((e.questions || []).length) + ' سؤالًا">' +
+      label + '</a>';
+  }
+
   function renderNav() {
     var host = $('#navTree');
-    if (!DATA.sections.length) { host.innerHTML = '<p class="nav-group">لا توجد أقسام بعد.</p>'; return; }
+    if (!DATA.sections.length) {
+      host.innerHTML = '<p class="nav-note">لَا تُوجَدُ أَقْسَامٌ بَعْدُ.</p>';
+      return;
+    }
     host.innerHTML = DATA.sections.map(function (s) {
-      var seq = (s.exams || []).filter(function (e) { return e.kind !== 'mixed'; });
-      var mix = (s.exams || []).filter(function (e) { return e.kind === 'mixed'; });
-      function link(e) {
-        return '<a class="nav-exam" href="#/s/' + esc(s.id) + '/e/' + esc(e.id) + '" data-key="' + esc(s.id + '/' + e.id) + '">' +
-          esc(e.title) +
-          (e.pages ? '<span class="pages">' + esc(e.pages) + ' · ' + arNum((e.questions || []).length) + ' سؤال</span>'
-                   : '<span class="pages">' + arNum((e.questions || []).length) + ' سؤال</span>') +
-          '</a>';
+      var ranges = (s.exams || []).filter(function (e) { return e.kind !== 'mixed'; });
+      var mixed = (s.exams || []).filter(function (e) { return e.kind === 'mixed'; });
+      var total = ranges.reduce(function (n, e) { return n + (e.questions || []).length; }, 0);
+
+      // Group the page-range exams by their span so each span is one row.
+      var order = [], byspan = {};
+      ranges.forEach(function (e) {
+        var k = e.pages || '';
+        if (!byspan[k]) { byspan[k] = []; order.push(k); }
+        byspan[k].push(e);
+      });
+
+      var html = '<details class="nav-sec" open><summary>' + esc(s.title) +
+        '<span class="count">' + arNum(total) + ' سؤالًا</span></summary>';
+
+      if (order.length) {
+        html += '<div class="nav-note">صَفَحَاتٌ</div>';
+        html += order.map(function (k) {
+          var group = byspan[k];
+          var chips = group.map(function (e, i) {
+            return chip(s, e, group.length > 1 ? arNum(i + 1) : '•');
+          }).join('');
+          return '<div class="span-row"><span class="span-label">' + esc(k) + '</span>' +
+                 '<div class="chips">' + chips + '</div></div>';
+        }).join('');
       }
-      var total = (s.exams || []).reduce(function (n, e) { return n + (e.questions || []).length; }, 0);
-      return '<details class="nav-sec" open><summary>' + esc(s.title) +
-        ' <span class="count">(' + arNum(total) + ')</span></summary>' +
-        (seq.length ? '<div class="nav-group">امتحانات الصَّفَحَات</div>' + seq.map(link).join('') : '') +
-        (mix.length ? '<div class="nav-group">امتحانات شاملة</div>' + mix.map(link).join('') : '') +
-        '</details>';
+
+      if (mixed.length) {
+        html += '<div class="nav-note">شَامِلَةٌ — مِنْ كُلِّ الْقِسْمِ</div>';
+        html += '<div class="chips wide">' + mixed.map(function (e, i) {
+          return chip(s, e, arNum(i + 1));
+        }).join('') + '</div>';
+      }
+      return html + '</details>';
     }).join('');
   }
 
   function markActive(key) {
-    Array.prototype.forEach.call(document.querySelectorAll('.nav-exam'), function (a) {
+    Array.prototype.forEach.call(document.querySelectorAll('.chip, .nav-exam'), function (a) {
       a.classList.toggle('active', a.getAttribute('data-key') === key);
     });
   }
@@ -241,7 +272,9 @@
   /* ---------- home ---------- */
   function renderHome() {
     markActive('');
-    var totalQ = allExams().reduce(function (n, x) { return n + (x.exam.questions || []).length; }, 0);
+    var totalQ = allExams().reduce(function (n, x) {
+      return x.exam.kind === 'mixed' ? n : n + (x.exam.questions || []).length;
+    }, 0);
     var view = $('#view');
     if (!DATA.sections.length) {
       view.innerHTML = '<div class="empty"><h2>لَمْ يُضَفْ مُحْتَوًى بَعْدُ</h2><p>أضِف ملفات الأسئلة في مجلد data/.</p></div>';
@@ -254,7 +287,9 @@
         '<span>مَجْمُوعُ الأَسْئِلَةِ: ' + arNum(totalQ) + '</span></div>' +
       '</div>' +
       DATA.sections.map(function (s) {
-        var n = (s.exams || []).reduce(function (a, e) { return a + (e.questions || []).length; }, 0);
+        var n = (s.exams || []).reduce(function (a, e) {
+          return e.kind === 'mixed' ? a : a + (e.questions || []).length;
+        }, 0);
         return '<article class="q"><div class="q-head"><span class="q-num">ق</span>' +
           '<strong>' + esc(s.title) + '</strong>' +
           (s.pages ? '<span class="badge">' + esc(s.pages) + '</span>' : '') +
