@@ -321,67 +321,60 @@ blockquote.matn{
   .main{max-width:none;padding:0}
 }
 
-/* ---------- author card (home) ---------- */
-.author{
-  display:flex; gap:16px; align-items:center;
-  background:
-    radial-gradient(120% 140% at 100% 0%, var(--accent-soft), transparent 60%),
-    var(--surface);
-  border:1px solid var(--border); border-top:3px solid var(--gold);
-  border-radius:var(--radius); padding:18px; box-shadow:var(--shadow);
-  margin:0 0 18px;
-  animation:cardIn .65s cubic-bezier(.2,.7,.3,1) both;
+/* ---------- opening statement (home) ---------- */
+.opening{
+  text-align:center; padding:8px 4px 26px; margin:0 0 6px;
+  border-bottom:1px solid var(--border);
+  animation:cardIn .7s cubic-bezier(.2,.7,.3,1) both;
 }
-.author-photo{
-  width:116px; height:150px; flex:none; object-fit:cover; object-position:top center;
-  border-radius:12px; border:2px solid var(--gold);
-  box-shadow:0 0 0 4px var(--surface),0 6px 18px rgba(90,30,30,.22);
-  background:var(--surface-2);
-  animation:photoIn .8s cubic-bezier(.2,.7,.3,1) both .1s;
+.portrait{
+  width:150px; height:190px; object-fit:cover; object-position:top center;
+  border-radius:14px; border:2px solid var(--gold);
+  box-shadow:0 8px 26px rgba(90,30,30,.26);
+  animation:photoIn .85s cubic-bezier(.2,.7,.3,1) both .08s;
 }
-.author-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.author-body b{
-  font-family:var(--serif); font-size:1.35rem; color:var(--accent); line-height:1.6;
-  animation:slideIn .6s ease both .18s;
+.kicker{
+  margin:14px 0 0; font-family:var(--serif); font-size:1.3rem; font-weight:700;
+  color:var(--accent); line-height:1.6;
+  animation:fadeUp .6s ease both .18s;
 }
-:root[data-theme="dark"] .author-body b,
-:root:not([data-theme="light"]) .author-body b{color:var(--gold)}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .author-body b{color:var(--accent)}}
-.author-body i{
-  font-style:normal; font-size:.8rem; color:var(--green);
-  animation:slideIn .6s ease both .26s;
+.kicker span{
+  display:block; font-family:var(--sans); font-size:.78rem;
+  font-weight:400; color:var(--green); letter-spacing:.02em;
 }
-.author-body blockquote{
-  margin:10px 0 0; padding:11px 13px; font-size:.93rem; line-height:1.95;
-  background:var(--matn-bg); border:1px solid var(--matn-border);
-  border-inline-start:3px solid var(--green); border-radius:10px;
-  cursor:pointer; animation:slideIn .6s ease both .34s;
+:root[data-theme="dark"] .kicker,
+:root:not([data-theme="light"]) .kicker{color:var(--gold)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .kicker{color:var(--accent)}}
+
+.saying{
+  font-family:var(--serif); font-size:2rem; line-height:1.85;
+  margin:20px auto 0; max-width:22ch; color:var(--text);
+  animation:fadeUp .7s ease both .26s;
 }
-.author-body blockquote:hover{border-inline-start-color:var(--gold)}
-.author-body blockquote.swap{animation:swapIn .4s ease both}
-.author-body cite{
-  display:block; margin-top:6px; font-style:normal;
-  font-size:.72rem; color:var(--muted);
+.saying::after{
+  content:""; display:block; width:120px; height:2px; margin:16px auto 0;
+  background:linear-gradient(90deg,transparent,var(--gold),var(--green),transparent);
+}
+.saying-exp{
+  margin:16px auto 0; max-width:60ch; font-size:1.02rem; line-height:2.15;
+  color:var(--muted);
+  animation:fadeUp .7s ease both .34s;
+}
+.saying-exp b{color:var(--text);font-weight:600}
+.src{
+  margin:12px 0 0; font-size:.76rem; color:var(--muted); letter-spacing:.04em;
+  animation:fadeUp .7s ease both .42s;
 }
 
-@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
-@keyframes photoIn{from{opacity:0;transform:translateY(10px) scale(.9) rotate(-2deg)}to{opacity:1;transform:none}}
-@keyframes slideIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
-@keyframes swapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes photoIn{from{opacity:0;transform:translateY(12px) scale(.92)}to{opacity:1;transform:none}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-/* the rest of the home page follows the card in */
-.hero{animation:fadeUp .6s ease both .12s}
-.big-action{animation:fadeUp .6s ease both .2s}
-.search-row{animation:fadeUp .6s ease both .26s}
-.tiles>.tile{animation:fadeUp .5s ease both}
-.tiles>.tile:nth-child(1){animation-delay:.30s}
-.tiles>.tile:nth-child(2){animation-delay:.35s}
-.tiles>.tile:nth-child(3){animation-delay:.40s}
-.tiles>.tile:nth-child(4){animation-delay:.45s}
-.tiles>.tile:nth-child(5){animation-delay:.50s}
-.tiles>.tile:nth-child(6){animation-delay:.55s}
-.tiles>.tile:nth-child(n+7){animation-delay:.60s}
+/* the rest of the home page follows it in */
+.hero{animation:fadeUp .6s ease both .5s}
+.big-action{animation:fadeUp .6s ease both .56s}
+.search-row{animation:fadeUp .6s ease both .62s}
+.tiles>.tile{animation:fadeUp .5s ease both .66s}
 .span-cards>.span-card,.num-grid>.num-chip{animation:fadeUp .45s ease both}
 .q{animation:fadeUp .4s ease both}
 
@@ -389,9 +382,10 @@ blockquote.matn{
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
 
-@media (max-width:420px){
-  .author{gap:13px;padding:14px}
-  .author-photo{width:96px;height:124px}
-  .author-body b{font-size:1.15rem}
-  .author-body blockquote{font-size:.89rem}
+@media (max-width:620px){
+  .opening{padding:4px 2px 22px}
+  .portrait{width:126px;height:160px}
+  .kicker{font-size:1.15rem}
+  .saying{font-size:1.55rem;max-width:18ch;margin-top:16px}
+  .saying-exp{font-size:.95rem;line-height:2.05;text-align:justify;text-align-last:center}
 }
