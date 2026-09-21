@@ -323,33 +323,75 @@ blockquote.matn{
 
 /* ---------- author card (home) ---------- */
 .author{
-  display:flex; gap:14px; align-items:flex-start;
-  background:var(--surface); border:1px solid var(--border);
-  border-top:3px solid var(--gold); border-radius:var(--radius);
-  padding:14px 16px; box-shadow:var(--shadow); margin:0 0 18px;
+  display:flex; gap:16px; align-items:center;
+  background:
+    radial-gradient(120% 140% at 100% 0%, var(--accent-soft), transparent 60%),
+    var(--surface);
+  border:1px solid var(--border); border-top:3px solid var(--gold);
+  border-radius:var(--radius); padding:18px; box-shadow:var(--shadow);
+  margin:0 0 18px;
+  animation:cardIn .65s cubic-bezier(.2,.7,.3,1) both;
 }
 .author-photo{
-  width:78px; height:100px; flex:none; object-fit:cover;
-  border-radius:10px; border:2px solid var(--gold);
+  width:116px; height:150px; flex:none; object-fit:cover; object-position:top center;
+  border-radius:12px; border:2px solid var(--gold);
+  box-shadow:0 0 0 4px var(--surface),0 6px 18px rgba(90,30,30,.22);
   background:var(--surface-2);
+  animation:photoIn .8s cubic-bezier(.2,.7,.3,1) both .1s;
 }
-.author-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.author-body b{font-family:var(--serif);font-size:1.15rem;color:var(--accent);line-height:1.6}
+.author-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.author-body b{
+  font-family:var(--serif); font-size:1.35rem; color:var(--accent); line-height:1.6;
+  animation:slideIn .6s ease both .18s;
+}
 :root[data-theme="dark"] .author-body b,
 :root:not([data-theme="light"]) .author-body b{color:var(--gold)}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .author-body b{color:var(--accent)}}
-.author-body i{font-style:normal;font-size:.78rem;color:var(--green)}
+.author-body i{
+  font-style:normal; font-size:.8rem; color:var(--green);
+  animation:slideIn .6s ease both .26s;
+}
 .author-body blockquote{
-  margin:8px 0 0; padding:10px 12px; font-size:.92rem; line-height:1.95;
+  margin:10px 0 0; padding:11px 13px; font-size:.93rem; line-height:1.95;
   background:var(--matn-bg); border:1px solid var(--matn-border);
   border-inline-start:3px solid var(--green); border-radius:10px;
+  cursor:pointer; animation:slideIn .6s ease both .34s;
 }
+.author-body blockquote:hover{border-inline-start-color:var(--gold)}
+.author-body blockquote.swap{animation:swapIn .4s ease both}
 .author-body cite{
   display:block; margin-top:6px; font-style:normal;
   font-size:.72rem; color:var(--muted);
 }
+
+@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes photoIn{from{opacity:0;transform:translateY(10px) scale(.9) rotate(-2deg)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes swapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* the rest of the home page follows the card in */
+.hero{animation:fadeUp .6s ease both .12s}
+.big-action{animation:fadeUp .6s ease both .2s}
+.search-row{animation:fadeUp .6s ease both .26s}
+.tiles>.tile{animation:fadeUp .5s ease both}
+.tiles>.tile:nth-child(1){animation-delay:.30s}
+.tiles>.tile:nth-child(2){animation-delay:.35s}
+.tiles>.tile:nth-child(3){animation-delay:.40s}
+.tiles>.tile:nth-child(4){animation-delay:.45s}
+.tiles>.tile:nth-child(5){animation-delay:.50s}
+.tiles>.tile:nth-child(6){animation-delay:.55s}
+.tiles>.tile:nth-child(n+7){animation-delay:.60s}
+.span-cards>.span-card,.num-grid>.num-chip{animation:fadeUp .45s ease both}
+.q{animation:fadeUp .4s ease both}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
 @media (max-width:420px){
-  .author{gap:12px;padding:12px}
-  .author-photo{width:64px;height:82px}
-  .author-body blockquote{font-size:.88rem}
+  .author{gap:13px;padding:14px}
+  .author-photo{width:96px;height:124px}
+  .author-body b{font-size:1.15rem}
+  .author-body blockquote{font-size:.89rem}
 }
