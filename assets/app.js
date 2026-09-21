@@ -94,6 +94,7 @@
         (e.questions || []).forEach(function (q) {
           if (seen[q.id]) return;
           seen[q.id] = 1;
+          q._sec = s.id;
           POOL.push(q);
         });
       });
@@ -104,8 +105,22 @@
       PMAX = POOL[POOL.length - 1].page || 1;
     }
   }
-  function inRange(from, to) {
-    return POOL.filter(function (q) { return q.page >= from && q.page <= to; });
+  // secs: array of section ids, or empty/null for every section.
+  function inRange(from, to, secs) {
+    var only = secs && secs.length ? secs : null;
+    return POOL.filter(function (q) {
+      if (q.page < from || q.page > to) return false;
+      return !only || only.indexOf(q._sec) !== -1;
+    });
+  }
+  function secsKey(secs) { return secs && secs.length ? secs.join('.') : 'all'; }
+  function parseSecs(key) {
+    if (!key || key === 'all') return [];
+    return key.split('.').filter(function (id) { return !!sectionOf(id); });
+  }
+  function secsLabel(secs) {
+    if (!secs.length) return '\u0643\u064F\u0644\u0651\u064F \u0627\u0644\u0652\u0643\u0650\u062A\u064E\u0627\u0628\u0650';
+    return secs.map(function (id) { return (sectionOf(id) || {}).title || id; }).join(' \u00B7 ');
   }
 
   function sectionOf(sid) {
@@ -228,7 +243,7 @@
       '</div>';
 
     if (span) {
-      html += '<a class="big-action slim" href="#/pick/' + span.from + '/' + span.to + '">' +
+      html += '<a class="big-action slim" href="#/pick/' + span.from + '-' + span.to + '-15-' + esc(s.id) + '">' +
         '<span class="ba-icon">✂</span>' +
         '<span class="ba-text"><b>امْتِحَانٌ بِصَفَحَاتٍ تَخْتَارُهَا</b>' +
         '<i>دَاخِلَ هَذَا الْقِسْمِ</i></span>' +
@@ -267,87 +282,106 @@
   }
 
   /* ---------- page-range picker ---------- */
-  var PICK = { from: 0, to: 0, size: 15 };
+  var PICK = { from: 0, to: 0, size: 15, secs: [] };
   function clampPick() {
     PICK.from = Math.max(PMIN, Math.min(PMAX, PICK.from || PMIN));
     PICK.to = Math.max(PMIN, Math.min(PMAX, PICK.to || PMAX));
     if (PICK.from > PICK.to) { var t = PICK.from; PICK.from = PICK.to; PICK.to = t; }
   }
-  function renderPicker(from, to) {
+  // Union of the page spans of the selected sections (all of them when none is selected).
+  function spanOfSecs(secs) {
+    var lo = null, hi = null;
+    DATA.sections.forEach(function (s) {
+      if (secs.length && secs.indexOf(s.id) === -1) return;
+      var sp = pageSpan(s);
+      if (!sp) return;
+      lo = lo === null ? sp.from : Math.min(lo, sp.from);
+      hi = hi === null ? sp.to : Math.max(hi, sp.to);
+    });
+    return lo === null ? { from: PMIN, to: PMAX } : { from: lo, to: hi };
+  }
+
+  function renderPicker(from, to, secs) {
     setBack('#/');
+    if (secs) PICK.secs = secs;
     if (from) { PICK.from = from; PICK.to = to; }
     else if (!PICK.from) {
       PICK.from = parseInt(get('pick.from', PMIN), 10) || PMIN;
       PICK.to = parseInt(get('pick.to', PMAX), 10) || PMAX;
       PICK.size = parseInt(get('pick.size', 15), 10) || 15;
+      PICK.secs = parseSecs(get('pick.secs', 'all'));
     }
     clampPick();
 
     var sizes = [10, 15, 20, 30, 0];
-    var sizeLabels = ['١٠', '١٥', '٢٠', '٣٠', 'الْكُلّ'];
+    var sizeLabels = ['\u0661\u0660', '\u0661\u0665', '\u0662\u0660', '\u0663\u0660', '\u0627\u0644\u0652\u0643\u064F\u0644\u0651'];
 
     $('#view').innerHTML =
       '<div class="hero small">' +
-        '<h1>اخْتَرْ صَفَحَاتِكَ</h1>' +
-        '<p>حَدِّدْ مِنْ أَيِّ صَفْحَةٍ إِلَى أَيِّ صَفْحَةٍ تُرِيدُ الاِمْتِحَانَ</p>' +
+        '<h1>\u0627\u062E\u0652\u062A\u064E\u0631\u0652 \u0627\u0645\u0652\u062A\u0650\u062D\u064E\u0627\u0646\u064E\u0643\u064E</h1>' +
+        '<p>\u062D\u064E\u062F\u0651\u0650\u062F\u0650 \u0627\u0644\u0652\u0623\u064E\u0642\u0652\u0633\u064E\u0627\u0645\u064E \u0648\u064E\u0627\u0644\u0635\u0651\u064E\u0641\u064E\u062D\u064E\u0627\u062A\u0650 \u0627\u0644\u0651\u064E\u062A\u0650\u064A \u062A\u064F\u0631\u0650\u064A\u062F\u064F</p>' +
       '</div>' +
 
       '<div class="picker">' +
-        '<div class="pk-row">' +
-          numBox('from', 'مِنْ صَفْحَةِ', PICK.from) +
-          numBox('to', 'إِلَى صَفْحَةِ', PICK.to) +
-        '</div>' +
-        '<label class="sl"><span>مِنْ</span>' +
-          '<input type="range" id="slFrom" min="' + PMIN + '" max="' + PMAX + '" value="' + PICK.from + '"></label>' +
-        '<label class="sl"><span>إِلَى</span>' +
-          '<input type="range" id="slTo" min="' + PMIN + '" max="' + PMAX + '" value="' + PICK.to + '"></label>' +
-
-        '<div class="pk-label">اخْتِصَارَاتٌ</div>' +
-        '<div class="quick">' +
-          '<button class="qbtn" type="button" data-from="' + PMIN + '" data-to="' + PMAX + '">' +
-            'كُلُّ الْكِتَابِ</button>' +
+        '<div class="pk-label">\u0627\u0644\u0652\u0623\u064E\u0642\u0652\u0633\u064E\u0627\u0645\u064F \u2014 \u064A\u064F\u0645\u0652\u0643\u0650\u0646\u064F \u0627\u062E\u0652\u062A\u0650\u064A\u064E\u0627\u0631\u064F \u0623\u064E\u0643\u0652\u062B\u064E\u0631\u064E \u0645\u0650\u0646\u0652 \u0642\u0650\u0633\u0652\u0645\u064D</div>' +
+        '<div class="quick secs">' +
+          '<button class="qbtn' + (PICK.secs.length ? '' : ' on') + '" type="button" data-allsecs="1">' +
+            '\u0643\u064F\u0644\u0651\u064F \u0627\u0644\u0652\u0643\u0650\u062A\u064E\u0627\u0628\u0650</button>' +
           DATA.sections.map(function (s) {
-            var sp = pageSpan(s);
-            if (!sp) return '';
-            return '<button class="qbtn" type="button" data-from="' + sp.from + '" data-to="' + sp.to + '">' +
-              esc(s.title.replace(/^كِتَابُ\s*/, '')) + '</button>';
+            if (!pageSpan(s)) return '';
+            var on = PICK.secs.indexOf(s.id) !== -1;
+            return '<button class="qbtn' + (on ? ' on' : '') + '" type="button" data-sec="' + esc(s.id) + '">' +
+              esc(s.title.replace(/^\u0643\u0650\u062A\u064E\u0627\u0628\u064F\s*/, '')) + '</button>';
           }).join('') +
         '</div>' +
 
-        '<div class="pk-label">قِطَعٌ مِئَوِيَّةٌ</div>' +
-        '<div class="quick">' + hundredButtons() + '</div>' +
+        '<div class="pk-label">\u0627\u0644\u0635\u0651\u064E\u0641\u064E\u062D\u064E\u0627\u062A\u064F</div>' +
+        '<div class="pk-row">' +
+          numBox('from', '\u0645\u0650\u0646\u0652 \u0635\u064E\u0641\u0652\u062D\u064E\u0629\u0650', PICK.from) +
+          numBox('to', '\u0625\u0650\u0644\u064E\u0649 \u0635\u064E\u0641\u0652\u062D\u064E\u0629\u0650', PICK.to) +
+        '</div>' +
+        '<label class="sl"><span>\u0645\u0650\u0646\u0652</span>' +
+          '<input type="range" id="slFrom" min="' + PMIN + '" max="' + PMAX + '" value="' + PICK.from + '"></label>' +
+        '<label class="sl"><span>\u0625\u0650\u0644\u064E\u0649</span>' +
+          '<input type="range" id="slTo" min="' + PMIN + '" max="' + PMAX + '" value="' + PICK.to + '"></label>' +
 
-        '<div class="pk-label">عَدَدُ الأَسْئِلَةِ فِي كُلِّ امْتِحَانٍ</div>' +
+        '<div class="pk-label">\u0642\u0650\u0637\u064E\u0639\u064C \u0633\u064E\u0631\u0650\u064A\u0639\u064E\u0629\u064C</div>' +
+        '<div class="quick">' + blockButtons() + '</div>' +
+
+        '<div class="pk-label">\u0639\u064E\u062F\u064E\u062F\u064F \u0627\u0644\u0623\u064E\u0633\u0652\u0626\u0650\u0644\u064E\u0629\u0650 \u0641\u0650\u064A \u0643\u064F\u0644\u0651\u0650 \u0627\u0645\u0652\u062A\u0650\u062D\u064E\u0627\u0646\u064D</div>' +
         '<div class="quick sizes">' + sizes.map(function (n, i) {
           return '<button class="qbtn' + (PICK.size === n ? ' on' : '') + '" type="button" data-size="' + n + '">' +
             sizeLabels[i] + '</button>';
         }).join('') + '</div>' +
 
         '<div class="pk-summary" id="pkSum"></div>' +
-        '<button class="btn primary huge" id="goBtn" type="button">ابْدَأِ الاِمْتِحَانَ</button>' +
+        '<button class="btn primary huge" id="goBtn" type="button">\u0627\u0628\u0652\u062F\u064E\u0623\u0650 \u0627\u0644\u0627\u0650\u0645\u0652\u062A\u0650\u062D\u064E\u0627\u0646\u064E</button>' +
       '</div>';
 
     function numBox(key, label, val) {
       return '<div class="numbox">' +
         '<span class="nb-label">' + label + '</span>' +
         '<div class="nb-ctrl">' +
-          '<button class="nb-btn" type="button" data-step="-1" data-key="' + key + '">−</button>' +
+          '<button class="nb-btn" type="button" data-step="-1" data-key="' + key + '">\u2212</button>' +
           '<input class="nb-in" id="in_' + key + '" type="number" inputmode="numeric" min="' + PMIN + '" max="' + PMAX + '" value="' + val + '">' +
           '<button class="nb-btn" type="button" data-step="1" data-key="' + key + '">+</button>' +
         '</div>' +
         '<div class="nb-jump">' +
-          '<button class="nb-small" type="button" data-step="-10" data-key="' + key + '">−١٠</button>' +
-          '<button class="nb-small" type="button" data-step="10" data-key="' + key + '">+١٠</button>' +
+          '<button class="nb-small" type="button" data-step="-10" data-key="' + key + '">\u2212\u0661\u0660</button>' +
+          '<button class="nb-small" type="button" data-step="10" data-key="' + key + '">+\u0661\u0660</button>' +
         '</div>' +
       '</div>';
     }
 
-    function hundredButtons() {
-      var out = [], start = Math.floor(PMIN / 50) * 50;
-      for (var p = start; p < PMAX; p += 50) {
-        var a = Math.max(p, PMIN), b = Math.min(p + 50, PMAX);
+    // 50-page blocks across whatever the selected sections span.
+    function blockButtons() {
+      var sp = spanOfSecs(PICK.secs);
+      var out = ['<button class="qbtn" type="button" data-from="' + sp.from + '" data-to="' + sp.to + '">' +
+        '\u0643\u064F\u0644\u0651\u064F \u0627\u0644\u0645\u064F\u062E\u0652\u062A\u064E\u0627\u0631\u0650</button>'];
+      for (var p = Math.floor(sp.from / 50) * 50; p < sp.to; p += 50) {
+        var a = Math.max(p, sp.from), b = Math.min(p + 50, sp.to);
         out.push('<button class="qbtn" type="button" data-from="' + a + '" data-to="' + b + '">' +
-          arNum(a) + '–' + arNum(b) + '</button>');
+          arNum(a) + '\u2013' + arNum(b) + '</button>');
       }
       return out.join('');
     }
@@ -358,16 +392,22 @@
       $('#in_to').value = PICK.to;
       $('#slFrom').value = PICK.from;
       $('#slTo').value = PICK.to;
-      var hits = inRange(PICK.from, PICK.to);
+      var hits = inRange(PICK.from, PICK.to, PICK.secs);
       var size = PICK.size || hits.length || 1;
       var parts = hits.length ? Math.ceil(hits.length / size) : 0;
       $('#pkSum').innerHTML = hits.length
-        ? 'مِنْ صَفْحَةِ <b>' + arNum(PICK.from) + '</b> إِلَى <b>' + arNum(PICK.to) + '</b>' +
-          '<br>' + arNum(hits.length) + ' سُؤَالًا · ' +
-          arNum(parts) + ' امْتِحَانًا'
-        : '<span class="warn">لَا أَسْئِلَةَ فِي هَذَا المَدَى بَعْدُ</span>';
+        ? esc(secsLabel(PICK.secs)) + '<br>' +
+          '\u0645\u0650\u0646\u0652 \u0635\u064E\u0641\u0652\u062D\u064E\u0629\u0650 <b>' + arNum(PICK.from) + '</b> \u0625\u0650\u0644\u064E\u0649 <b>' + arNum(PICK.to) + '</b>' +
+          '<br>' + arNum(hits.length) + ' \u0633\u064F\u0624\u064E\u0627\u0644\u064B\u0627 \u00B7 ' +
+          arNum(parts) + ' \u0627\u0645\u0652\u062A\u0650\u062D\u064E\u0627\u0646\u064B\u0627'
+        : '<span class="warn">\u0644\u064E\u0627 \u0623\u064E\u0633\u0652\u0626\u0650\u0644\u064E\u0629\u064E \u0641\u0650\u064A \u0647\u064E\u0630\u064E\u0627 \u0627\u0644\u0645\u064E\u062F\u064E\u0649</span>';
       $('#goBtn').disabled = !hits.length;
-      set('pick.from', PICK.from); set('pick.to', PICK.to); set('pick.size', PICK.size);
+      set('pick.from', PICK.from); set('pick.to', PICK.to);
+      set('pick.size', PICK.size); set('pick.secs', secsKey(PICK.secs));
+    }
+    function refreshBlocks() {
+      var host = $('.picker .quick:not(.secs):not(.sizes)');
+      if (host) host.innerHTML = blockButtons();
     }
 
     var pk = $('.picker');
@@ -376,6 +416,25 @@
       if (!b) return;
       if (b.hasAttribute('data-step')) {
         PICK[b.getAttribute('data-key')] += parseInt(b.getAttribute('data-step'), 10);
+        sync();
+      } else if (b.hasAttribute('data-sec')) {
+        var id = b.getAttribute('data-sec');
+        var i = PICK.secs.indexOf(id);
+        if (i === -1) PICK.secs.push(id); else PICK.secs.splice(i, 1);
+        var sp = spanOfSecs(PICK.secs);
+        PICK.from = sp.from; PICK.to = sp.to;
+        $$('.secs .qbtn').forEach(function (x) {
+          var sid = x.getAttribute('data-sec');
+          x.classList.toggle('on', sid ? PICK.secs.indexOf(sid) !== -1 : !PICK.secs.length);
+        });
+        refreshBlocks();
+        sync();
+      } else if (b.hasAttribute('data-allsecs')) {
+        PICK.secs = [];
+        var all = spanOfSecs([]);
+        PICK.from = all.from; PICK.to = all.to;
+        $$('.secs .qbtn').forEach(function (x) { x.classList.toggle('on', x === b); });
+        refreshBlocks();
         sync();
       } else if (b.hasAttribute('data-from')) {
         PICK.from = parseInt(b.getAttribute('data-from'), 10);
@@ -386,7 +445,7 @@
         $$('.sizes .qbtn').forEach(function (x) { x.classList.toggle('on', x === b); });
         sync();
       } else if (b.id === 'goBtn') {
-        location.hash = '#/c/' + PICK.from + '/' + PICK.to + '/' + PICK.size;
+        location.hash = '#/c/' + PICK.from + '-' + PICK.to + '-' + PICK.size + '-' + secsKey(PICK.secs);
       }
     });
     pk.addEventListener('input', function (ev) {
@@ -400,57 +459,57 @@
     window.scrollTo(0, 0);
   }
 
-  /* ---------- custom exams built from a page range ---------- */
-  function customExams(from, to, size) {
-    var hits = inRange(from, to);
+  /* ---------- custom exams built from a page range + chosen sections ---------- */
+  function customExams(from, to, size, secs) {
+    var hits = inRange(from, to, secs);
     if (!hits.length) return [];
-    var pool = shuffled(hits, 'c:' + from + ':' + to + ':' + size);
+    var pool = shuffled(hits, 'c:' + from + ':' + to + ':' + size + ':' + secsKey(secs));
     var per = size > 0 ? size : pool.length;
     var out = [];
-    for (var k = 0; k * per < pool.length; k++) {
-      out.push(pool.slice(k * per, (k + 1) * per));
-    }
+    for (var k = 0; k * per < pool.length; k++) out.push(pool.slice(k * per, (k + 1) * per));
     return out;
   }
-  function customTitle(from, to, i, n) {
-    return 'صَفَحَاتُ ' + arNum(from) + '–' + arNum(to) +
-      (n > 1 ? ' — الجُزْءُ ' + arNum(i + 1) : '');
+  function customSpec(from, to, size, secs) {
+    return from + '-' + to + '-' + size + '-' + secsKey(secs);
   }
 
-  function renderCustomIndex(from, to, size) {
-    setBack('#/pick/' + from + '/' + to);
-    PICK.from = from; PICK.to = to; PICK.size = size;
-    var parts = customExams(from, to, size);
+  function renderCustomIndex(from, to, size, secs) {
+    setBack('#/pick/' + customSpec(from, to, size, secs));
+    PICK.from = from; PICK.to = to; PICK.size = size; PICK.secs = secs;
+    var parts = customExams(from, to, size, secs);
     if (!parts.length) { location.hash = '#/pick'; return; }
-    if (parts.length === 1) { renderCustomExam(from, to, size, 0); return; }
+    if (parts.length === 1) { renderCustomExam(from, to, size, secs, 0); return; }
     var total = parts.reduce(function (a, p) { return a + p.length; }, 0);
+    var spec = customSpec(from, to, size, secs);
     $('#view').innerHTML =
       '<div class="hero small">' +
-        '<h1>صَفَحَاتُ ' + arNum(from) + '–' + arNum(to) + '</h1>' +
-        '<p>' + arNum(total) + ' سُؤَالًا · ' + arNum(parts.length) +
-          ' امْتِحَانًا · كُلُّ وَاحِدٍ ' +
-          arNum(size || total) + ' سُؤَالًا</p>' +
+        '<h1>\u0635\u064E\u0641\u064E\u062D\u064E\u0627\u062A\u064F ' + arNum(from) + '\u2013' + arNum(to) + '</h1>' +
+        '<p>' + esc(secsLabel(secs)) + '</p>' +
+        '<p>' + arNum(total) + ' \u0633\u064F\u0624\u064E\u0627\u0644\u064B\u0627 \u00B7 ' + arNum(parts.length) +
+          ' \u0627\u0645\u0652\u062A\u0650\u062D\u064E\u0627\u0646\u064B\u0627</p>' +
       '</div>' +
       '<div class="num-grid big">' + parts.map(function (p, i) {
-        return '<a class="num-chip" href="#/c/' + from + '/' + to + '/' + size + '/' + (i + 1) + '">' +
+        return '<a class="num-chip" href="#/c/' + spec + '/' + (i + 1) + '">' +
           arNum(i + 1) + '<small>' + arNum(p.length) + '</small></a>';
       }).join('') + '</div>' +
-      '<div class="foot-actions"><a class="btn" href="#/pick">تَغْيِيرُ الصَّفَحَاتِ</a></div>';
+      '<div class="foot-actions"><a class="btn" href="#/pick/' + spec + '">\u062A\u064E\u063A\u0652\u064A\u0650\u064A\u0631\u064F \u0627\u0644\u0627\u062E\u0652\u062A\u0650\u064A\u064E\u0627\u0631\u0650</a></div>';
     window.scrollTo(0, 0);
   }
 
-  function renderCustomExam(from, to, size, idx) {
-    var parts = customExams(from, to, size);
+  function renderCustomExam(from, to, size, secs, idx) {
+    var parts = customExams(from, to, size, secs);
     if (!parts.length) { location.hash = '#/pick'; return; }
     if (idx >= parts.length) idx = 0;
-    var back = parts.length > 1 ? '#/c/' + from + '/' + to + '/' + size : '#/pick/' + from + '/' + to;
+    var spec = customSpec(from, to, size, secs);
+    var back = parts.length > 1 ? '#/c/' + spec : '#/pick/' + spec;
     showExam({
-      id: 'c-' + from + '-' + to + '-' + size + '-' + (idx + 1),
-      title: customTitle(from, to, idx, parts.length),
-      pages: arNum(from) + '–' + arNum(to),
+      id: 'c-' + spec + '-' + (idx + 1),
+      title: '\u0635\u064E\u0641\u064E\u062D\u064E\u0627\u062A\u064F ' + arNum(from) + '\u2013' + arNum(to) +
+        (parts.length > 1 ? ' \u2014 \u0627\u0644\u062C\u064F\u0632\u0652\u0621\u064F ' + arNum(idx + 1) : ''),
+      pages: arNum(from) + '\u2013' + arNum(to),
       questions: parts[idx]
-    }, 'امْتِحَانٌ مُخْتَارٌ', back,
-      parts.length > 1 && idx + 1 < parts.length ? '#/c/' + from + '/' + to + '/' + size + '/' + (idx + 2) : '');
+    }, secsLabel(secs), back,
+      parts.length > 1 && idx + 1 < parts.length ? '#/c/' + spec + '/' + (idx + 2) : '');
   }
 
   /* ---------- question rendering ---------- */
@@ -623,9 +682,13 @@
     var m;
     if ((m = h.match(/^\/s\/([^/]+)\/e\/([^/]+)/))) return renderExam(decodeURIComponent(m[1]), decodeURIComponent(m[2]));
     if ((m = h.match(/^\/s\/([^/]+)$/))) return renderSection(decodeURIComponent(m[1]));
-    if ((m = h.match(/^\/c\/(\d+)\/(\d+)\/(\d+)\/(\d+)$/))) return renderCustomExam(+m[1], +m[2], +m[3], +m[4] - 1);
-    if ((m = h.match(/^\/c\/(\d+)\/(\d+)\/(\d+)$/))) return renderCustomIndex(+m[1], +m[2], +m[3]);
-    if ((m = h.match(/^\/pick\/(\d+)\/(\d+)$/))) return renderPicker(+m[1], +m[2]);
+    if ((m = h.match(/^\/c\/(\d+)-(\d+)-(\d+)-([^/]+)\/(\d+)$/)))
+      return renderCustomExam(+m[1], +m[2], +m[3], parseSecs(decodeURIComponent(m[4])), +m[5] - 1);
+    if ((m = h.match(/^\/c\/(\d+)-(\d+)-(\d+)-([^/]+)$/)))
+      return renderCustomIndex(+m[1], +m[2], +m[3], parseSecs(decodeURIComponent(m[4])));
+    if ((m = h.match(/^\/pick\/(\d+)-(\d+)-(\d+)-([^/]+)$/)))
+      return renderPicker(+m[1], +m[2], parseSecs(decodeURIComponent(m[4])));
+    if ((m = h.match(/^\/pick\/(\d+)\/(\d+)$/))) return renderPicker(+m[1], +m[2], []);
     if (h.indexOf('/pick') === 0) return renderPicker();
     if ((m = h.match(/^\/q\/(.+)$/))) return renderSearch(decodeURIComponent(m[1]));
     renderHome();
